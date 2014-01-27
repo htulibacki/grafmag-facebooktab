@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="pl">
+    <head>
+        <meta charset="UTF-8">
+        <title>Grafmag - najnowsze artykuły</title>
+
+        <link href="http://fonts.googleapis.com/css?family=Roboto:400,300,500,700&amp;subset=latin-ext" rel="stylesheet">
+        <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+        }
+
+        article h1 {
+            font-weight: 300;
+            font-size: 26px;
+            color: #196abc;
+            line-height: 1.3em;
+            margin: 0px 15px 15px 15px;
+        }
+
+        article h1 a {
+            border-bottom: 1px solid #d8dee5;
+            text-decoration: none;
+            color: #196abc;
+        }
+
+        article h1 a:hover {
+            color: #46494f;
+        }
+
+        article .desc {
+            font-size: 13px;
+            color: #acb4bd;
+            line-height: 1.3em;
+            margin: 0px 15px 10px 15px;
+        }
+
+        article p {
+            font-size: 14px;
+            color: #46494f;
+            line-height: 1.4em;
+            margin: 0px 15px 20px 15px;
+        }
+
+        </style>
+    </head>
+    <body>
+        <div id="container"></div>
+
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+        <script type="text/html" id="article_tmpl">
+            <article>
+                <h1><a href="<%=link%>" target="_blank"><%=title%></a></h1>
+                <div class="desc"><%=humanDate%>, autor: <%=author%></div>
+                <p><%=content%></p>
+            </article>
+        </script>
+        <script>
+        // Simple JavaScript Templating
+        // John Resig - http://ejohn.org/ - MIT Licensed
+        (function(){
+          var cache = {};
+
+          this.tmpl = function tmpl(str, data){
+            var fn = !/\W/.test(str) ?
+              cache[str] = cache[str] ||
+                tmpl(document.getElementById(str).innerHTML) :
+
+              new Function("obj",
+                "var p=[],print=function(){p.push.apply(p,arguments);};" +
+
+                "with(obj){p.push('" +
+                str
+                  .replace(/[\r\t\n]/g, " ")
+                  .split("<%").join("\t")
+                  .replace(/((^|%>)[^\t]*)'/g, "$1\r")
+                  .replace(/\t=(.*?)%>/g, "',$1,'")
+                  .split("\t").join("');")
+                  .split("%>").join("p.push('")
+                  .split("\r").join("\\'")
+              + "');}return p.join('');");
+
+            return data ? fn( data ) : fn;
+          };
+        })();
+
+        var output_html = '', article = tmpl('article_tmpl');
+        $.ajax({
+            url: document.location.protocol + '//ajax.googleapis.com/ajax/services/feed/load?v=1.0&num=10&callback=?&q=' + encodeURIComponent('http://feeds.feedburner.com/grafmag?format=xml'),
+            dataType: 'json',
+            success : function (data) {
+                if (data.responseData.feed && data.responseData.feed.entries) {
+                    $.each(data.responseData.feed.entries, function (i, e) {
+                        var publishedDate = new Date(e.publishedDate);
+                        e.humanDate = publishedDate.toLocaleDateString('pl', {timeZone: 'Europe/Warsaw'});
+
+                        output_html += article(e);
+                    });
+
+                    $('#container').append(output_html);
+                }
+            }
+        });
+        </script>
+    </body>
+</html>
